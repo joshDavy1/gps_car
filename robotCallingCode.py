@@ -30,14 +30,20 @@ def main():
     GPIO.setup(blueButton,GPIO.IN,pull_up_down=GPIO.PUD_UP)
     GPIO.setup(blueLED,GPIO.OUT)
     
+    GPIO.add_event_detect(greenButton, GPIO.RISING, bouncetime=200)
+    GPIO.add_event_detect(redButton, GPIO.RISING, bouncetime=200)
     GPIO.add_event_detect(blueButton, GPIO.RISING, bouncetime=200)
     
+    
     #Flags
-    greenFlag = 0
-    redFlag = 0
-    blueFlag = 0
-    loadedFlag = False
-    arrivedFlag = False
+    greenFlag        = False
+    redFlag          = False
+    blueFlag         = False
+    arrivedFlag      = False
+    loadedFlag       = False
+    loadOnFlag       = False
+    loadCanceledFlag = False
+    
 
     #Button states
     #Arrived button for testing robot arrival
@@ -48,50 +54,43 @@ def main():
         green_button_state = GPIO.input(greenButton)
         if green_button_state==0:
             sleep(0.5)
-            if greenFlag==0:
-                greenFlag=1
+            if greenFlag==False:
+                greenFlag=True
                 print("Calling Robot.")
                 #TODO Wesocket connection for robot call.        
                 print("Robot on the way.")
-            
             else:
                 print("Robot has already been called.")
                 
-                
         if greenFlag==1:
             GPIO.output(greenLED, True)
-                
         else:
             GPIO.output(greenLED, False)
         
-        
-        
-        red_button_state = GPIO.input(redButton)
-        if red_button_state==0:
+        if GPIO.event_detected(redButton):
             sleep(0.5)
-            if redFlag==0:
+            if redFlag==False:
                 # if the red button is pressed to on.
-                if greenFlag==1:
+                if greenFlag==True:
                     print("Cancel Robot.")
-                    greenFlag=0
-                    redFlag=1
+                    greenFlag=False
+                    redFlag=True
                 else:
                     print("No incoming robots to cancel.")
             
-    
-        if redFlag==1:
-            GPIO.output(redLED,GPIO.HIGH)
+        if redFlag==True:
+            GPIO.output(redLED, True)
             print("Cancelling...")
             #TODO Websocket Connection for robot cancel.
             sleep(2.0)
             print("Robot Successfully Cancelled.")
-            redFlag=0
+            redFlag=False
         else:
             GPIO.output(redLED, False)
         
         #Run if blue button is pressed unprompted.
         if GPIO.event_detected(blueButton):
-            if arrivedFlag==0:
+            if arrivedFlag==False:
                 print("There are currently no robots to load.")
     
         ########## ROBOT ARRIVAL TESTING ###############
@@ -101,34 +100,52 @@ def main():
             sleep(0.5)
             arrivedFlag=True
             
-            
             if arrivedFlag==True:
-                greenFlag=0
+                greenFlag=False
                 print("Robot has arrived.")
                 print("Please load the tray on the robot then press the blue button.")
                 
                 while (loadedFlag is False):
-                    print("Blink Loop")
                     GPIO.output(blueLED, True)
                     sleep(0.5)
                     GPIO.output(blueLED, False)
                     sleep(0.5)
                     if GPIO.event_detected(blueButton):
                         print("blue button press")
+                        loadOnFlag=True 
                         loadedFlag=True
+                    
+                    if GPIO.event_detected(redButton):
+                        print("red button press")
+                        loadCanceledFlag=True
+                        loadedFlag=True 
                 
-                print("Robot loaded, thank you")
+                if loadOnFlag==True:
+                    print("Robot loaded, thank you")
+                    #TODO Websocket connection for loaded robot.   
+                    loadOnFlag=False 
+                
+                if loadCanceledFlag==True:
+                    GPIO.output(redLED, True)
+                    print("Loading cancelling...")
+                    #TODO Websocket Connection for robot cancel.
+                    sleep(2.0)
+                    print("Robot loading cancelled.")
+                    loadCanceledFlag=False 
+                
+                #Reset flags after the robot has left after loading is finished.
                 arrivedFlag=False
                 loadedFlag=False
-                #TODO Websocket connection for loaded robot.      
+                   
                 
-                
-            
-            
 if __name__ == "__main__":
-    loadFlag=False
     main()
                 
+
+
+    
+            
+   
 
 
     
