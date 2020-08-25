@@ -2,7 +2,7 @@
 
 ### A Python program for the robot calling device that allows the picker to call and interact with the fruit pallet carrying robots. 
 
-### Program progress.
+### Program progress:
 
 - [x] Button interactions
 - [ ] Display interface
