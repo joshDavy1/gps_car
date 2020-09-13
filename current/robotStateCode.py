@@ -1,3 +1,11 @@
+###############################
+#
+# File   : robotStateCode.py
+# Author : Hayden Coe
+# Date   : 13/09/2020
+#
+##############################
+
 from transitions import Machine
 import time
 
