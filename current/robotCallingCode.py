@@ -44,8 +44,6 @@ import os
 from gps import *
 
 
-
-
 #Set warnings off (optional)
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
@@ -79,21 +77,34 @@ GPIO.setup(blueLED,GPIO.OUT)
 #Arrived button for testing robot arrival
 arrivedButton = 21
 GPIO.setup(arrivedButton,GPIO.IN,pull_up_down=GPIO.PUD_UP)
-       
+
+lat = ''
+long = ''
+
 try:
    
-    
-        
     def getPositionData(gps):
-            while True:
+            
+            global lat
+            global long
+            
+            while (lat == '') and (long == ''):
                 nx = gpsd.next()
                 
                 if nx['class'] == 'TPV':
-                    latitude = getattr(nx, 'lat', "Unknown")
-                    longitude = getattr(nx, 'lon', "Unknown")
-                    print ("Your position: lon = " + str(longitude) + ", lat = " + str(latitude))
-                    sleep(5.0)
-    
+                    lat = getattr(nx, 'lat', "Unknown")
+                    long = getattr(nx, 'lon', "Unknown")
+                    print ("Your position: lat = " + str(lat) + ", long = " + str(long))
+                    
+                    epx = getattr(nx, 'epx', "Unknown")
+                    epy = getattr(nx, 'epy', "Unknown")
+                    print ("lat error = " + str(epy) + "m" + ", long error = " + str(epx) + "m") 
+                    #epe = epy+'/'+epx
+                    
+                    time = getattr(nx, 'time', "Unknown")
+                    print ("time = " + str(time))
+                            
+            ws.send(json.dumps({'method':'location_update', 'row':'A1', 'user': 'Hayden', 'latitude':lat, 'longitude':long, 'accuracy':epx, 'rcv_time':time}))    
     
     def main():
 
@@ -131,7 +142,7 @@ try:
                 #Websocket Connection for robot cancel.
                 ws.send(json.dumps({'method':'cancel', 'user': 'Hayden'}))
                 
-                sleep(2)
+                sleep(1)
                 print("Robot Successfully Cancelled.")    
                 GPIO.output(greenLED, False)
                 GPIO.output(redLED, False)
@@ -140,41 +151,13 @@ try:
     
         
         GPIO.add_event_detect(greenButton, GPIO.FALLING, callback=green_callback, bouncetime=200)
-        GPIO.add_event_detect(redButton, GPIO.FALLING, callback=red_callback, bouncetime=200)
+        GPIO.add_event_detect(redButton, GPIO.FALLING, callback=red_callback, bouncetime=1100)
         
         
         pause()               
                     
     if __name__ == "__main__":
        
-        #Set warnings off (optional)
-        GPIO.setwarnings(False)
-        GPIO.setmode(GPIO.BCM)
-        GPIO.cleanup()
-
-        gpsd = gps(mode=WATCH_ENABLE|WATCH_NEWSTYLE)
-
-        #Set the Buttons and LED pins
-        greenButton = 23
-        greenLED = 24
-
-        redButton = 16
-        redLED = 13
-
-        blueButton = 5
-        blueLED = 26
-        
-        GPIO.setmode(GPIO.BCM)
-        #Setup the Buttons and LEDs
-        GPIO.setup(greenButton,GPIO.IN,pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(greenLED,GPIO.OUT)
-
-        GPIO.setup(redButton,GPIO.IN,pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(redLED,GPIO.OUT)
-
-        GPIO.setup(blueButton,GPIO.IN,pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(blueLED,GPIO.OUT)
-        
         ws = create_connection("wss://lcas.lincoln.ac.uk/car/ws")
         ws.connect("wss://lcas.lincoln.ac.uk/car/ws")
         
@@ -184,7 +167,7 @@ try:
         ws.send(json.dumps({'method':'register','admin': True, 'user': 'admin'}))
         ws.send(json.dumps({'method':'get_state', 'user': 'Hayden'}))        
        
-        #getPositionData(gpsd)    
+        getPositionData(gpsd)    
        
         
         main()
@@ -200,3 +183,4 @@ except KeyboardInterrupt:
   
 finally:  
     GPIO.cleanup() #clean exit  
+
