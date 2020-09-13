@@ -7,5 +7,5 @@
 - [x] Button interactions
 - [ ] Display interface
 - [ ] Satellite navigation  
-- [ ] WiFi enabled 
-- [ ] Websocket communication 
+- [x] WiFi enabled 
+- [x] Websocket communication 
