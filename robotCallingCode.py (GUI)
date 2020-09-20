@@ -47,18 +47,15 @@ from guizero import App, Text, Box, PushButton
 from gpiozero import LED
 
 
-#app = App(title="Call A Robot", width=800, height=430)
-#app.full_screen=True
-#message = Text(app, text="Welcome to Call A Robot.")
-
-#box = Box(app, layout="grid", grid=[1,0])
-#button1 = PushButton(box, text="Call", grid=[0,0])
-#button2 = PushButton(box, text="Cancel", grid=[1,0])
-#button3 = PushButton(box, bg="blue", text="Load", grid=[2,0])
-
-#app.display()
 from tkinter import *
 import tkinter as tk
+
+
+#Globals
+lat = ''
+long = ''
+
+user =''
 
 class Window(Frame):
     def __init__(self, master=None):
@@ -70,22 +67,20 @@ root = Tk()
 app = Window(root)
 label_text = StringVar()
 
+
+
 # set window title
 root.wm_title("Call A Robot")
 
 text = Label(root,text="Welcome to Call A Robot.",foreground="red",
-    font = "arial 20 bold",textvariable = label_text)
+font = "arial 20 bold",textvariable = label_text)
 text.place(relx = 0.5, rely = 0.1, anchor = CENTER)
 
 gbutton = Button(root,text="Call",bg="white", height=5, width=10)
-#gbutton.grid(row = 2, column = 0, padx=5, pady=50, )
-#gbutton.pack(padx=5, pady=50, side=tk.TOP)
 gbutton.place(relx = 0.25, rely = 0.5, anchor = 'w') 
 gbutton.config(highlightbackground="green")
 
 rbutton = Button(root,text="Cancel",bg="white", height=5, width=10)
-#rbutton.grid(row = 2, column = 1, padx=5, pady=50)
-#rbutton.pack(padx=5, pady=50, side=tk.TOP)
 rbutton.place(relx = 0.5, rely = 0.5, anchor = CENTER) 
 rbutton.config(highlightbackground="red")
 
@@ -95,20 +90,26 @@ bbutton.config(highlightbackground="blue")
 
 root.geometry("800x430")
 
-def main_screen():
-    mainscreen = Tk()   # create a GUI window 
-    mainscreen.geometry("800x800") # set the configuration of GUI window 
-    mainscreen.title(" Login Page") # set the title of GUI window
-# create a Form label 
-Label(text="Login Window Example", width="30", height="2", font=("Calibri", 13)).pack() 
-Label(text="").pack() 
-# create Login Button 
-Button(text="Login", height="2", width="30").pack() 
-Label(text="").pack() 
-# create a register button
-Button(text="Register", height="2",width="30").pack()
 
 
+    
+    
+def LoginPage():
+    login_screen=Tk()
+    login_screen.title("Login")
+    login_screen.geometry("300x250")
+    Label(login_screen, text="Please enter login details").pack()
+    Label(login_screen, text="Username").pack()
+    username_login_entry = Entry(login_screen)
+    username_login_entry.pack()
+    
+    
+    def submit(): 
+        user = username_login_entry.get()
+        print("The user is : " + user)  
+    
+    Button(login_screen, text="Login", width=30, height=1, command = submit).pack()    
+    
 
 gpsd = gps(mode=WATCH_ENABLE|WATCH_NEWSTYLE)
 
@@ -141,11 +142,8 @@ GPIO.setup(blueLED,GPIO.OUT)
 
 
 
-#Globals
-lat = ''
-long = ''
 
-user = ''
+
 
 
 try:
@@ -175,15 +173,15 @@ try:
     
     def main():
         
-        main_screen()
+        LoginPage()
 
         #Main program
         print("Welcome to Call A Robot")
         label_text.set("Welcome to Call A Robot.")
         
         rs = RobotState()
-        print ("The first state in the state machine is: %s" % rs.state)
-            
+        print("The first state in the state machine is: %s" % rs.state)
+        print(user)    
                 
         def green_callback(channel):
             print("Green button pressed")
@@ -197,7 +195,7 @@ try:
                 rs.call_robot()
                 
                 #Websocket connection for robot call.
-                ws.send(json.dumps({'method':'call', 'user': 'Hayden'}))
+                ws.send(json.dumps({'method':'call', 'user': user}))
                 print("A Robot is on the way.")
                 label_text.set("A Robot is on the way")
                  
@@ -223,7 +221,7 @@ try:
                 rs.cancel_robot()
                 
                 #Websocket Connection for robot cancel.
-                ws.send(json.dumps({'method':'cancel', 'user': 'Hayden'}))
+                ws.send(json.dumps({'method':'cancel', 'user': user}))
                 
                 sleep(1)
                 print("Robot Successfully Cancelled.")
@@ -329,6 +327,7 @@ try:
         GPIO.output(greenLED, False)
         GPIO.output(blueLED, False)
         GPIO.output(redLED, False)
+        
         ws = create_connection("wss://lcas.lincoln.ac.uk/car/ws")
         ws.connect("wss://lcas.lincoln.ac.uk/car/ws")
         
@@ -354,3 +353,4 @@ except KeyboardInterrupt:
   
 finally:  
     GPIO.cleanup() #clean exit  
+
