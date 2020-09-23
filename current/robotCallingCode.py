@@ -221,6 +221,8 @@ try:
                 y = threading.Thread(target=check_arrived)
                 y.start()
                 
+                z = threading.Thread(target=check_location)
+                z.start()
                
             
             else:
@@ -334,11 +336,9 @@ try:
             # Robot arrival 
             ws.send(json.dumps({'method':'get_states', 'user': user}))
             
-            while rs.state!="ARRIVED":
+            while rs.state=="CALLED":
                 
                 sleep(5)
-                
-                getPositionData(gpsd) 
                 
                 jsondata = ws.recv()
                 
@@ -354,7 +354,11 @@ try:
                             robot_arrived_callback()
             
             
-            
+        def check_location():
+
+            while rs.state=="CALLED":
+                sleep(5)
+                getPositionData(gpsd) 
         
         
         #   if GPIO.event_detected(blueButton):
