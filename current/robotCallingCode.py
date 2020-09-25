@@ -37,6 +37,7 @@ from robotStateCode import RobotState
 
 import requests
 import json
+import time
 
 from callarobot import *
 
@@ -183,11 +184,17 @@ try:
                     print ("lat error = " + str(epy) + "m" + ", long error = " + str(epx) + "m") 
                     #epe = epy+'/'+epx
                     
-                    time = getattr(nx, 'time', "Unknown")
-                    print ("time = " + str(time))
+                    #time = getattr(nx, 'time', "Unknown")
+                    #thetime = time.time()
+                    #print ("time = " + str(time))
                             
-            ws.send(json.dumps({'method':'location_update', 'row':'A1', 'user': user, 'latitude':lat, 'longitude':long, 'accuracy':epx, 'rcv_time':time}))    
+            ws.send(json.dumps({'method':'location_update', 'row':'3', 'user': user, 'latitude':lat, 'longitude':long, 'accuracy':epx, 'rcv_time':time.time()}))    
     
+    def check_location():
+
+            while True: #rs.state=="CALLED":
+                sleep(.5)
+                getPositionData(gpsd)
     def main():
        
         #Main program
@@ -199,6 +206,11 @@ try:
         
         print("Logged in: " + user)
         user_text.set("User: " + user)
+
+        z = threading.Thread(target=check_location)
+        z.start()
+
+
                 
         def green_callback(channel):
             
@@ -221,9 +233,6 @@ try:
                 y = threading.Thread(target=check_arrived)
                 y.start()
                 
-                z = threading.Thread(target=check_location)
-                z.start()
-               
             
             else:
                 print("A Robot has already been called.")
@@ -354,13 +363,7 @@ try:
                             robot_arrived_callback()
             
             
-        def check_location():
-
-            while rs.state=="CALLED":
-                sleep(5)
-                getPositionData(gpsd) 
-        
-        
+       
         #   if GPIO.event_detected(blueButton):
               #      print("Blue button pressed")
                 
@@ -411,6 +414,5 @@ except KeyboardInterrupt:
   
 finally:  
     GPIO.cleanup() #clean exit  
-
 
 
