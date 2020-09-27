@@ -53,9 +53,6 @@ import tkinter as tk
 
 
 #Globals
-lat = ''
-long = ''
-
 user =''
 
 
@@ -92,7 +89,8 @@ gbutton.place(relx = 0.25, rely = 0.5, anchor = 'w')
 gbutton.config(highlightbackground="green")
 
 rbutton = Button(root,text="Cancel",bg="white", height=5, width=10)
-rbutton.place(relx = 0.5, rely = 0.5, anchor = CENTER) 
+rbutton.place(relx = 0.5, rely = 0.5, anchor = CENTER)
+
 rbutton.config(highlightbackground="red")
 
 bbutton = Button(root,text="Load",bg="white", height=5, width=10)
@@ -126,11 +124,14 @@ def LoginPage():
     
     subButton = Button(login_screen, text="Login", width=30, height=1, command = submit, bg = "green")
     subButton.place(relx = 0.5, rely = 0.6, anchor = CENTER)
+    login_screen.attributes("-topmost", True)
+    username_login_entry.icursor(0)
     login_screen.mainloop()
 
 
 
 gpsd = gps(mode=WATCH_ENABLE|WATCH_NEWSTYLE)
+rs = RobotState()
 
 #Set the Buttons and LED pins
 greenButton = 23
@@ -165,9 +166,6 @@ try:
    
     def getPositionData(gps):
             
-            global lat
-            global long
-            
             lat = ''
             long = ''
             
@@ -195,159 +193,15 @@ try:
             while True: #rs.state=="CALLED":
                 sleep(.5)
                 getPositionData(gpsd)
-    def main():
-       
-        #Main program
-        print("Welcome to Call A Robot")
-        label_text.set("Welcome to Call A Robot.")
-        
-        rs = RobotState()
-        print("The first state in the state machine is: %s" % rs.state)
-        
-        print("Logged in: " + user)
-        user_text.set("User: " + user)
-
-        z = threading.Thread(target=check_location)
-        z.start()
-
-
-                
-        def green_callback(channel):
-            
-            
-            print("Green button pressed")
-            if (rs.state=="INIT"):
-                print("Calling Robot.")
-                label_text.set("Calling Robot.")
-                
-                GPIO.output(greenLED, True)
-                gbutton.configure(bg = "green")
-                
-                rs.call_robot()
-                
-                #Websocket connection for robot call.
-                ws.send(json.dumps({'method':'call', 'user': user}))
-                print("A Robot is on the way.")
-                label_text.set("A Robot is on the way")
-                
-                y = threading.Thread(target=check_arrived)
-                y.start()
-                
-            
-            else:
-                print("A Robot has already been called.")
-                label_text.set("A Robot has already been called.")
-                sleep(1)
-                label_text.set("A Robot is on the way")
-                
-        def red_callback(channel):
-            print("Red button pressed")
-            if (rs.state=="CALLED"):
-                print("Cancelling...")
-                label_text.set("Cancelling...")
-                
-                GPIO.output(redLED, True)
-                rbutton.configure(bg = "red")
-                
-                rs.cancel_robot()
-                
-                #Websocket Connection for robot cancel.
-                ws.send(json.dumps({'method':'cancel', 'user': user}))
-                
-                sleep(1)
-                print("Robot Successfully Cancelled.")
-                label_text.set("Robot Successfully Cancelled.")
-                GPIO.output(greenLED, False)
-                gbutton.configure(bg = "white")
-                GPIO.output(redLED, False)
-                rbutton.configure(bg = "white")
-                sleep(1)
-                label_text.set("Welcome to Call A Robot.")
-                
-            
-            elif (rs.state=="ARRIVED"):
-                print("Cancelling...")
-                label_text.set("Cancelling...")
-                
-                GPIO.output(redLED, True)
-                rbutton.configure(bg = "red")
-                
-                rs.cancel_load()
-                
-                #Websocket Connection for robot cancel.
-                ws.send(json.dumps({'method':'cancel', 'user': user}))
-                
-                sleep(1)
-                print("Robot Load Successfully Cancelled.")    
-                label_text.set("Robot Successfully Cancelled.")
-                GPIO.output(blueLED, False)
-                bbutton.configure(bg = "white")
-                GPIO.output(redLED, False)
-                rbutton.configure(bg = "white")
-                
-                sleep(1)
-                label_text.set("Welcome to Call A Robot.")
-            
-            else:
-                print("No incoming robots to cancel.")
-                label_text.set("No incoming robots to cancel.")
-                sleep(1)
-                label_text.set("Welcome to Call A Robot.")
     
-        def blue_callback(channel):
-            if (rs.state=="ARRIVED"):
-                
-                label_text.set("Thank you the robot will now drive away.")
-                #Websocket Connection for robot loaded.
-                ws.send(json.dumps({'method':'set_state', 'user': user, 'state': 'LOADED'}))
-                
-                rs.robot_loaded()
-                
-                sleep(2)
-                label_text.set("Welcome to Call A Robot.")
-                ws.send(json.dumps({'method':'set_state', 'user': user, 'state': 'INIT'}))
-                rs.user_reset()
-                
-            else:
-                print("No robots to load.")
-                label_text.set("No robots to load.")
-                sleep(1)
-                label_text.set("Welcome to Call A Robot.")
-        
-        
-        def robot_arrived_callback():
-            rs.robot_arrived()
-            GPIO.output(greenLED, False)
-            gbutton.configure(bg = "white")
-            
-            print("Robot has arrived.")
-            print("Please load the tray on the robot then press the blue button.")
-            label_text.set("Please load the tray on the robot then press the blue button.")
-                
-            
-            x = threading.Thread(target=blue_blink)
-            x.start()
-            
-        def blue_blink():    
-            
-            while (rs.state=="ARRIVED"):
-                
-                bbutton.configure(bg = "blue")
-                GPIO.output(blueLED, True)
-                sleep(0.5)
-                
-                bbutton.configure(bg = "white")
-                GPIO.output(blueLED, False)
-                sleep(0.5) 
-        
-        def check_arrived():
+    def check_state():
             
             # Robot arrival 
             ws.send(json.dumps({'method':'get_states', 'user': user}))
             
-            while rs.state=="CALLED":
+            while True:#rs.state=="CALLED":
                 
-                sleep(5)
+                sleep(2)
                 
                 jsondata = ws.recv()
                 
@@ -357,18 +211,42 @@ try:
                 
                 for key in states:
                     if key == user:
-                        print(states[key])
+                        #print(states[key])
                         if states[key] == "ARRIVED":
                             print("Robot Arrived")
                             robot_arrived_callback()
-            
-            
+                        elif states[key] == "ACCEPT":
+                            print("Call Accepted, a Robot is on the way.")
+                            label_text.set("Call Accepted, a Robot is on the way")
+                        elif (rs.state=="CALLED"):
+                            if states[key] == "INIT":
+                                rs.cancel_robot()
+                                print("Robot Cancelled by Coordinator.")
+                                label_text.set("Robot Cancelled by Coordinator.")
+                                GPIO.output(greenLED, False)
+                                gbutton.configure(bg = "white")
+                                sleep(2)
+                                print("Welcome to Call A Robot")
+                                label_text.set("Welcome to Call A Robot.")    
+    
+    def main():
        
-        #   if GPIO.event_detected(blueButton):
-              #      print("Blue button pressed")
-                
-               # elif GPIO.event_detected(redButton):
-                #    print("Red button pressed")
+        #Main program
+        print("Welcome to Call A Robot")
+        label_text.set("Welcome to Call A Robot.")
+        
+        
+        print("The first state in the state machine is: %s" % rs.state)
+        
+        print("Logged in: " + user)
+        user_text.set("User: " + user)
+
+        z = threading.Thread(target=check_location)
+        z.start()
+        
+        y = threading.Thread(target=check_state)
+        y.start()
+
         
         GPIO.add_event_detect(greenButton, GPIO.RISING, callback=green_callback, bouncetime=1100)
         GPIO.add_event_detect(redButton, GPIO.FALLING, callback=red_callback, bouncetime=1100)
@@ -379,7 +257,130 @@ try:
         #getPositionData(gpsd) 
         root.mainloop()
         #pause()               
-                    
+    
+    def green_callback(channel):
+        print("Green button pressed")
+        if (rs.state=="INIT"):
+            print("Calling Robot...")
+            label_text.set("Calling Robot...")
+            
+            GPIO.output(greenLED, True)
+            gbutton.configure(bg = "green")
+            
+            rs.call_robot()
+            
+            #Websocket connection for robot call.
+            ws.send(json.dumps({'method':'call', 'user': user}))
+            
+        
+        else:
+            print("A Robot has already been called.")
+            label_text.set("A Robot has already been called.")
+            sleep(1)
+            label_text.set("A Robot is on the way")
+            
+    def red_callback(channel):
+        print("Red button pressed")
+        if (rs.state=="CALLED"):
+            print("Cancelling...")
+            label_text.set("Cancelling...")
+            
+            GPIO.output(redLED, True)
+            rbutton.configure(bg = "red")
+            
+            rs.cancel_robot()
+            
+            #Websocket Connection for robot cancel.
+            ws.send(json.dumps({'method':'cancel', 'user': user}))
+            
+            sleep(1)
+            print("Robot Successfully Cancelled.")
+            label_text.set("Robot Successfully Cancelled.")
+            GPIO.output(greenLED, False)
+            gbutton.configure(bg = "white")
+            GPIO.output(redLED, False)
+            rbutton.configure(bg = "white")
+            sleep(1)
+            label_text.set("Welcome to Call A Robot.")
+            
+        
+        elif (rs.state=="ARRIVED"):
+            print("Cancelling...")
+            label_text.set("Cancelling...")
+            
+            GPIO.output(redLED, True)
+            rbutton.configure(bg = "red")
+            
+            rs.cancel_load()
+            
+            #Websocket Connection for robot cancel.
+            ws.send(json.dumps({'method':'cancel', 'user': user}))
+            
+            sleep(1)
+            print("Robot Load Successfully Cancelled.")    
+            label_text.set("Robot Successfully Cancelled.")
+            GPIO.output(blueLED, False)
+            bbutton.configure(bg = "white")
+            GPIO.output(redLED, False)
+            rbutton.configure(bg = "white")
+            
+            sleep(1)
+            label_text.set("Welcome to Call A Robot.")
+        
+        else:
+            print("No incoming robots to cancel.")
+            label_text.set("No incoming robots to cancel.")
+            sleep(1)
+            label_text.set("Welcome to Call A Robot.")
+
+    def blue_callback(channel):
+        if (rs.state=="ARRIVED"):
+            
+            label_text.set("Thank you the robot will now drive away.")
+            #Websocket Connection for robot loaded.
+            ws.send(json.dumps({'method':'set_state', 'user': user, 'state': 'LOADED'}))
+            
+            rs.robot_loaded()
+            
+            sleep(2)
+            label_text.set("Welcome to Call A Robot.")
+            ws.send(json.dumps({'method':'set_state', 'user': user, 'state': 'INIT'}))
+            rs.user_reset()
+            
+        else:
+            print("No robots to load.")
+            label_text.set("No robots to load.")
+            sleep(1)
+            label_text.set("Welcome to Call A Robot.")
+    
+    
+    def robot_arrived_callback():
+        rs.robot_arrived()
+        GPIO.output(greenLED, False)
+        gbutton.configure(bg = "white")
+        
+        print("Robot has arrived.")
+        print("Please load the tray on the robot then press the blue button.")
+        label_text.set("Please load the tray on the robot then press the blue button.")
+            
+        
+        x = threading.Thread(target=blue_blink)
+        x.start()
+        
+    def blue_blink():    
+        
+        while (rs.state=="ARRIVED"):
+            
+            bbutton.configure(bg = "blue")
+            GPIO.output(blueLED, True)
+            sleep(0.5)
+            
+            bbutton.configure(bg = "white")
+            GPIO.output(blueLED, False)
+            sleep(0.5)
+        print("End blue_blink thread")
+        sys.exit()
+        
     if __name__ == "__main__":
         
         GPIO.output(greenLED, False)
@@ -414,5 +415,3 @@ except KeyboardInterrupt:
   
 finally:  
     GPIO.cleanup() #clean exit  
-
-
