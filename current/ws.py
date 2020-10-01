@@ -1,13 +1,15 @@
 
 from websocket import create_connection
+import threading
 import time
 import json
 
-class WS():
+class WS(threading.Thread):
     def __init__(self, address="wss://lcas.lincoln.ac.uk/car/ws", user_name="picker02", update_orders_cb=None):
         self._ws = create_connection(address)
         self.user_name = user_name
         self.update_orders_cb = update_orders_cb
+        self.stop_event = threading.Event()
 
     def call_robot(self):
         self._ws.send(json.dumps({'method':'call', 'user': self.user_name}))
@@ -35,7 +37,7 @@ class WS():
         ))
 
     def run(self):
-        while self._ws.connected():
+        while not self.stop_event.is_set():
             msg = json.loads(self._ws.recv()) #< blocking
 
             if msg['method'] == 'update_orders' and self.user_name in msg['states']:
@@ -43,6 +45,7 @@ class WS():
                 if self.update_orders_cb is not None:
                     self.update_orders_cb(msg['states'][self.user_name])
 
-
-    def cleanup(self):
         self._ws.close()
+
+    def stop(self):
+        self.stop_event.set()

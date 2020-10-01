@@ -51,6 +51,9 @@ class MainApp():
         # start gps thread
         self._gps.start()
 
+        # start ws thread
+        self._ws.start()
+
         if gps_rate is None:
             ## we want gps readings as soon as they arrive
             self._gps.set_callback(self._ws.send_gps)
@@ -70,8 +73,8 @@ class MainApp():
 
     def stop(self):
         self._gps.stop()
+        self._ws.stop()
         self._buttons.cleanup()
-        self._ws.cleanup()
 
     # this receives updated state for the current user
     def update_orders_cb(self, state):
