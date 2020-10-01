@@ -1,5 +1,4 @@
 from transitions import Machine
-import time
 
 class RobotState(object):
 
@@ -26,27 +25,27 @@ class RobotState(object):
 
     def called_session(self):
         
-        print("Now in state: " +  self.state);
+        print("Now in state: " +  self.state)
         
     def canceled_session(self):
         
-        print("Now in state: " +  self.state);
+        print("Now in state: " +  self.state)
     
     def canceled_load_session(self):
         
-        print("Now in state: " +  self.state);
+        print("Now in state: " +  self.state)
        
     def arrived_session(self):
         
-        print("Now in state: " +  self.state);
+        print("Now in state: " +  self.state)
         
     def loaded_session(self):
         
-        print("Now in state: " +  self.state);
+        print("Now in state: " +  self.state)
         
     def reset_session(self):
         
-        print("Now in state: " +  self.state);
+        print("Now in state: " +  self.state)
         
         
         
