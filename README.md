@@ -5,7 +5,7 @@
 ### Program progress:
 
 - [x] Button interactions
-- [ ] Display interface
-- [ ] Satellite navigation  
+- [x] Display interface
+- [x] Satellite navigation  
 - [x] WiFi enabled 
 - [x] Websocket communication 
