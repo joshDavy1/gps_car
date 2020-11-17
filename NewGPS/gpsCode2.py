@@ -1,8 +1,8 @@
 ###############################
 #
-# File   : gpsCode.py
+# File   : gpsCode2.py
 # Author : Hayden Coe
-# Date   : 24/08/2020
+# Date   : 17/11/2020
 #
 ##############################
 
@@ -17,85 +17,90 @@ import re
 class GPS(threading.Thread):
     def __init__(self, gps_data_callback = None):
         super(GPS, self).__init__()
-        self.gpsd = gps(mode=WATCH_ENABLE|WATCH_NEWSTYLE)
+        
         self.callback = gps_data_callback
         #               (lat, lon, epx, epy, ts)
         self.last_data = (-1, -1, -1, -1, -1)
         self.has_more_data = True
         self.stop_event = threading.Event()
 
-        
-        
+        self.ser = serial.Serial('/dev/ttyS0',115200)
+        self.ser.flushInput()  
+
+        self.regex = r"(\+CGPSINFO: )[^\\]*"
+
+        self.gpsATBack = "+CGPSINFO: "
+
+        self.gpsATResponseNoSignal = "+CGPSINFO: ,,,,,,,,"
+
+        self.pureDegLat = -1
+        self.pureDegLog = -1
 
     def _getPositionData(self):
-            lat = -1
-            lon = -1
+            #lat = -1
+            #lon = -1
             epx = -1
             epy = -1
+          
+            try:       
+                while True:
+
+                    print("Requesting GPS Data.....")
+                    self.ser.write(("AT+CGPSINFO" + "\r\n").encode())
+
+                    if self.ser.inWaiting():
+                        rawSerRead = self.ser.read(self.ser.inWaiting())
+
+                        decodedSerRead = rawSerRead.decode(errors="ignore")
+
+                        reprDecodedSerRead = repr(decodedSerRead)
+
+                        #print(reprDecodedSerRead)
+
+                        match = re.search(self.regex, reprDecodedSerRead)
+
+                        if match: # if the regex search method found a valid AT response for gps
+
+                            self.gpsATResponse = match.group() # actual AT response given back
+
+                            if self.gpsATResponse != self.gpsATResponseNoSignal: # if the gps AT response was not no signal
+                                
+                                #print(rawGPSData)
+                                gpsATResponseNoBack = self.gpsATResponse[len(self.gpsATBack):] # substring the full AT command giving back just the values, no back characters
+                                #print(gpsATResponseNoBack)
+                                gpsData = gpsATResponseNoBack.split(",") # gps data is now represented as an array/list
+                                #print(gpsData)
+           
+                                ddLat = float(gpsData[0][:2]) # dd of lat
+                                mmLat = float(gpsData[0][2:]) # mm.mmmmmm of lat
+
+                                dddLog = float(gpsData[2][:3]) # ddd of log
+                                mmLog = float(gpsData[2][3:]) # mm.mmmmmm of log
+
+
+                                self.pureDegLat = round(((mmLat / 60) + ddLat) * (1 if gpsData[1] == "N" else -1), 12)
+                                self.pureDegLog = round(((mmLog / 60) + dddLog) * (1 if gpsData[3] == "E" else -1), 12)
+
+                                positionLatLog = str(self.pureDegLat) + ", " + str(self.pureDegLog)
+                                print("GPS Online, Location: " + positionLatLog)
+                                
+                                #lat = int(pureDegLat)
+                                #lon = int(pureDegLog)                                
+                              
+                                return self.pureDegLat, self.pureDegLog, -1, -1, time.time()
+                            
+                            else: # else if there was the response of no gps signal
+                                print("GPS Online, No GPS Signal Detected")             
+                        else:
+                            print("Unexpected GPS Response")
+                    
+                    time.sleep(0.5)
+                    
             
-
-            regex = r"(\+CGPSINFO: )[^\\]*"
-
-            gpsATBack = "+CGPSINFO: "
-
-            gpsATResponseNoSignal = "+CGPSINFO: ,,,,,,,,"
-            
-            while True:
-
-                ser = serial.Serial('/dev/ttyS0',115200)
-                ser.flushInput()        
-
-                print("Requesting GPS Data.....")
-                ser.write(("AT+CGPSINFO" + "\r\n").encode())
-
-                if ser.inWaiting():
-                    rawSerRead = ser.read(ser.inWaiting())
-
-                    decodedSerRead = rawSerRead.decode()
-
-                    reprDecodedSerRead = repr(decodedSerRead)
-
-                    #print(reprDecodedSerRead)
-
-                    match = re.search(regex, reprDecodedSerRead)
-
-                    if match: # if the regex search method found a valid AT response for gps
-
-                        gpsATResponse = match.group() # actual AT response given back
-
-                        if gpsATResponse != gpsATResponseNoSignal: # if the gps AT response was not no signal
-                            
-                            #print(rawGPSData)
-                            gpsATResponseNoBack = gpsATResponse[len(gpsATBack):] # substring the full AT command giving back just the values, no back characters
-                            #print(gpsATResponseNoBack)
-                            gpsData = gpsATResponseNoBack.split(",") # gps data is now represented as an array/list
-                            #print(gpsData)
-
-                            ddLat = float(gpsData[0][:2]) # dd of lat
-                            mmLat = float(gpsData[0][2:]) # mm.mmmmmm of lat
-
-                            dddLog = float(gpsData[2][:3]) # ddd of log
-                            mmLog = float(gpsData[2][3:]) # mm.mmmmmm of log
-
-
-                            pureDegLat = round(((mmLat / 60) + ddLat) * (1 if gpsData[1] == "N" else -1), 13)
-                            pureDegLog = round(((mmLog / 60) + dddLog) * (1 if gpsData[3] == "E" else -1), 13)
-
-                            positionLatLog = str(pureDegLat) + ", " + str(pureDegLog)
-                            print("GPS Online, Location: " + positionLatLog)
-                            
-                            lat = pureDegLat
-                            lon = pureDegLog
-                            
-                            return lat, lon, epx, epy, time.time()
-                        
-                        else: # else if there was the response of no gps signal
-                            print("GPS Online, No GPS Signal Detected")             
-                    else:
-                        print("Unexpected GPS Response")
-                
-                time.sleep(1)
-                
+            except:
+                return self.pureDegLat, self.pureDegLog, -1, -1, time.time()
+                print("stopping....")
+                self.ser.close()            
                 
 
     def set_callback(self, cb):
@@ -122,3 +127,4 @@ class GPS(threading.Thread):
         self.stop_event.set()
         
         
+
