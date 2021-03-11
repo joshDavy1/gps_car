@@ -1,15 +1,20 @@
 
 from websocket import create_connection
+from requests import post
+
 import threading
 import time
 import json
 
 class WS(threading.Thread):
     def __init__(self, address="wss://lcas.lincoln.ac.uk/car/ws", user_name="picker02", update_orders_cb=None):
+        threading.Thread.__init__(self)
+        self.addess = address
         self._ws = create_connection(address)
         self.user_name = user_name
         self.update_orders_cb = update_orders_cb
         self.stop_event = threading.Event()
+        self.registered = False
 
     def call_robot(self):
         self._ws.send(json.dumps({'method':'call', 'user': self.user_name}))
@@ -36,8 +41,24 @@ class WS(threading.Thread):
             }
         ))
 
+    def register(self):
+        res = post(
+            'https://lcas.lincoln.ac.uk/car/',
+            data={
+                'username': self.user_name
+            }
+        )
+        self.registered = res.ok
+        if self.registered:
+            print("Registered, response:", res)
+
     def run(self):
+        self.register()
+
         while not self.stop_event.is_set():
+            if not self.registered:
+                self.register()
+
             msg = json.loads(self._ws.recv()) #< blocking
 
             if msg['method'] == 'update_orders' and self.user_name in msg['states']:

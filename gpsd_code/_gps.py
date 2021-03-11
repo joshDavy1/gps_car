@@ -1,8 +1,9 @@
 import threading
+import gps
 from gps import *
 import time
 
-class GPS(threading.Thread)
+class GPS(threading.Thread):
     def __init__(self, gps_data_callback = None):
         super(GPS, self).__init__()
         self.gpsd = gps(mode=WATCH_ENABLE|WATCH_NEWSTYLE)
@@ -30,14 +31,19 @@ class GPS(threading.Thread)
             epy = -1
             
             data = self._getData()
+            
+            while not(data['class'] == 'TPV'):
+                data = self._getData()
+                #print(data)
+            
             while data is not None:
-                if nx['class'] == 'TPV':
-                    lat = getattr(nx, 'lat', -1)
-                    lon = getattr(nx, 'lon', -1)
-                    print ("Your position: lat = " + str(lat) + ", lon = " + str(lon))
+                if data['class'] == 'TPV':
+                    lat = getattr(data, 'lat', -1)
+                    lon = getattr(data, 'lon', -1)
+                    #print ("Your position: lat = " + str(lat) + ", lon = " + str(lon))
                     
-                    epx = getattr(nx, 'epx', -1)
-                    epy = getattr(nx, 'epy', -1)
+                    epx = getattr(data, 'epx', -1)
+                    epy = getattr(data, 'epy', -1)
                     print ("lat error = " + str(epy) + "m" + ", lon error = " + str(epx) + "m") 
 
                     return lat, lon, epx, epy, time.time()
