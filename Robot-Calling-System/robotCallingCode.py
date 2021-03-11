@@ -15,7 +15,7 @@ import json
 import time
 
 import gui
-import buttons
+#import buttons
 import gpsCode
 import ws
 
@@ -27,11 +27,11 @@ class MainApp():
         # initialize objects
         self.stop_blink = threading.Event()
         self._gui = gui.GUI()
-        self._buttons = buttons.Buttons(
-            on_green=self.green_callback, 
-            on_blue=self.blue_callback, 
-            on_red=self.red_callback
-        )
+        #self._buttons = buttons.Buttons(
+        #    on_green=self.green_callback, 
+        #    on_blue=self.blue_callback, 
+        #    on_red=self.red_callback
+        #)
         self.rs = RobotState()
         print("The first state in the state machine is: %s" % self.rs.state)
         print("Mac Address: " + gma())
@@ -82,7 +82,7 @@ class MainApp():
     def stop(self):
         self._gps.stop()
         self._ws.stop()
-        self._buttons.cleanup()
+        #self._buttons.cleanup()
 
     # this receives updated state for the current user
     def update_orders_cb(self, state):
@@ -95,33 +95,33 @@ class MainApp():
             if self.rs.state == "CALLED":
                 print("Robot Has Been Cancelled.")
                 self._gui.setDescription("Robot Has Been Cancelled.")
-                self._buttons.setGreenLed(False)
+                #self._buttons.setGreenLed(False)
                 self._gui.setGreenButton(False)
-                self._buttons.setRedLed(False)
+#                self._buttons.setRedLed(False)
                 self._gui.setRedButton(False)
                 self.rs.cancel_robot()
             elif self.rs.state == "ACCEPTED":
                 print("Robot Has Been Cancelled.")    
                 self._gui.setDescription("Robot Has Been Cancelled.")
-                self._buttons.setGreenLed(False)
+#'                self._buttons.setGreenLed(False)
                 self._gui.setGreenButton(False)
-                self._buttons.setRedLed(False)
+#                self._buttons.setRedLed(False)
                 self._gui.setRedButton(False)
                 self.rs.cancel_accept()
             elif self.rs.state == "ARRIVED":
                 print("Robot Load Has Been Cancelled.")    
                 self._gui.setDescription("Robot Load Has Been Cancelled.")
                 self.stop_blink.set()
-                self._buttons.setBlueLed(False)
+#                self._buttons.setBlueLed(False)
                 self._gui.setBlueButton(False)
-                self._buttons.setRedLed(False)
+#                self._buttons.setRedLed(False)
                 self._gui.setRedButton(False)
                 self.rs.cancel_load()
             time.sleep(1)
             self._gui.setDescription("Welcome to Call A Robot.")
         elif state == "ARRIVED":
             if self.rs.state == "ACCEPTED":
-                self._buttons.setGreenLed(False)
+#                self._buttons.setGreenLed(False)
                 self._gui.setGreenButton(False)
                 print("Robot has arrived.")
                 print("Please load the tray on the robot\n then press the blue button.")
@@ -144,7 +144,7 @@ class MainApp():
         if (self.rs.state == "INIT"):
             print("Calling Robot.")
             self._gui.setDescription("Calling Robot.")
-            self._buttons.setGreenLed(True)
+#            self._buttons.setGreenLed(True)
             self._gui.setGreenButton(True)
             self._ws.call_robot()
             
@@ -164,45 +164,45 @@ class MainApp():
         if (self.rs.state=="CALLED"):
             print("Cancelling...")
             self._gui.setDescription("Cancelling...")
-            self._buttons.setRedLed(True)
+#            self._buttons.setRedLed(True)
             self._gui.setRedButton(True)
             self._ws.cancel_robot()
             self.rs.cancel_robot()
             time.sleep(1)
             self._gui.setDescription("Robot Sucessfully Cancelled.")
-            self._buttons.setGreenLed(False)
+#            self._buttons.setGreenLed(False)
             self._gui.setGreenButton(False)
-            self._buttons.setRedLed(False)
+#            self._buttons.setRedLed(False)
             self._gui.setRedButton(False)
             time.sleep(1)
             self._gui.setDescription("Welcome to Call A Robot.")
         elif (self.rs.state=="ACCEPTED"):
             print("Cancelling...")
             self._gui.setDescription("Cancelling...")
-            self._buttons.setRedLed(True)
+#            self._buttons.setRedLed(True)
             self._gui.setRedButton(True)
             self._ws.cancel_robot()
             self.rs.cancel_accept()
             time.sleep(1)
             self._gui.setDescription("Robot Sucessfully Cancelled.")
-            self._buttons.setGreenLed(False)
+#            self._buttons.setGreenLed(False)
             self._gui.setGreenButton(False)
-            self._buttons.setRedLed(False)
+#            self._buttons.setRedLed(False)
             self._gui.setRedButton(False)
             time.sleep(1)
             self._gui.setDescription("Welcome to Call A Robot.")
         elif (self.rs.state=="ARRIVED"):
             print("Cancelling...")
             self._gui.setDescription("Cancelling...")
-            self._buttons.setRedLed(True)
+#            self._buttons.setRedLed(True)
             self._gui.setRedButton(True)
             self._ws.cancel_robot()
             self.rs.cancel_robot()
             time.sleep(1)
             self._gui.setDescription("Robot Sucessfully Cancelled.")
-            self._buttons.setGreenLed(False)
+#            self._buttons.setGreenLed(False)
             self._gui.setGreenButton(False)
-            self._buttons.setRedLed(False)
+#            self._buttons.setRedLed(False)
             self._gui.setRedButton(False)
             time.sleep(1)
             self._gui.setDescription("Welcome to Call A Robot.")
@@ -229,10 +229,10 @@ class MainApp():
     
     def blue_blink(self):        
         while not (self.stop_blink.is_set()):
-            self._buttons.setBlueLed(True)
+#            self._buttons.setBlueLed(True)
             self._gui.setBlueButton(True)
             time.sleep(0.5)
-            self._buttons.setBlueLed(False)
+#            self._buttons.setBlueLed(False)
             self._gui.setBlueButton(False)
             time.sleep(0.5) 
 

@@ -43,7 +43,7 @@ class GPS(threading.Thread):
                     
                     epx = getattr(data, 'epx', -1)
                     epy = getattr(data, 'epy', -1)
-                    #print ("lat error = " + str(epy) + "m" + ", lon error = " + str(epx) + "m") 
+                    print ("lat error = " + str(epy) + "m" + ", lon error = " + str(epx) + "m") 
 
                     return lat, lon, epx, epy, time.time()
 
