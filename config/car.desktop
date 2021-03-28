@@ -1,0 +1,4 @@
+[Desktop Entry]
+Type=Application
+Name=CallARobot-app
+Exec=/bin/sh /opt/launch_car.sh
