@@ -34,19 +34,16 @@ class GPS(threading.Thread):
             
             while not(data['class'] == 'TPV'):
                 data = self._getData()
-                #print(data)
             
-            while data is not None:
-                if data['class'] == 'TPV':
-                    lat = getattr(data, 'lat', -1)
-                    lon = getattr(data, 'lon', -1)
+            lat = getattr(data, 'lat', -1)
+            lon = getattr(data, 'lon', -1)
                     #print ("Your position: lat = " + str(lat) + ", lon = " + str(lon))
                     
-                    epx = getattr(data, 'epx', -1)
-                    epy = getattr(data, 'epy', -1)
-                    print ("lat error = " + str(epy) + "m" + ", lon error = " + str(epx) + "m") 
+            epx = getattr(data, 'epx', -1)
+            epy = getattr(data, 'epy', -1)
+            print ("lat error = " + str(epy) + "m" + ", lon error = " + str(epx) + "m") 
 
-                    return lat, lon, epx, epy, time.time()
+            return lat, lon, epx, epy, time.time()
 
     def set_callback(self, cb):
         self.callback = cb        

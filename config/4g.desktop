@@ -1,0 +1,4 @@
+[Desktop Entry]
+Type=Application
+Name=4G-connection
+Exec=sudo /usr/bin/perl /opt/wvdiald.pl

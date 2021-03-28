@@ -33,14 +33,14 @@ class MainApp():
         )
         self.rs = RobotState()
         print("The first state in the state machine is: %s" % self.rs.state)
-        print("Mac Address: " + str(gma()))
+#        print("Mac Address: " + str(gma()))
         self._gps = _gps.GPS()
 
     def start(self, gps_rate=None):
         # User login
         #self.user_name = self._gui.waitForLogin() # < blocking
-        
-        tempUser = str(gma())
+
+        tempUser = '%012x' % gma()
         
         self.user_name = "picker_"+tempUser.replace(':', '') 
         print("User: "+self.user_name)
@@ -61,6 +61,7 @@ class MainApp():
         # start ws thread
         self._ws.start()
 
+        print("Initialization complete")
         if gps_rate is None:
             ## we want gps readings as soon as they arrive
             self._gps.set_callback(self._ws.send_gps)
